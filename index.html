@@ -443,9 +443,109 @@
         .black-btn { background: linear-gradient(135deg, #333, #000); }
         .green-btn { background: linear-gradient(135deg, #00aa00, #008800); }
         
-        .color-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        .olympus-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 8px;
+            width: 280px;
+            height: 320px;
+            margin: 0 auto;
+        }
+        
+        .olympus-symbol {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7));
+            border: 2px solid #ffd700;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            color: #333;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .olympus-symbol.winning {
+            animation: olympusWin 1s ease-in-out;
+            box-shadow: 0 0 20px #ffd700;
+            border-color: #ff6b6b;
+        }
+        
+        .olympus-symbol.tumbling {
+            animation: tumble 0.8s ease-in-out;
+        }
+        
+        @keyframes olympusWin {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        
+        @keyframes tumble {
+            0% { transform: translateY(0) rotateZ(0deg); }
+            50% { transform: translateY(-20px) rotateZ(180deg); }
+            100% { transform: translateY(0) rotateZ(360deg); }
+        }
+        
+        .multiplier-orb {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b6b, #ffd700);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9em;
+            font-weight: bold;
+            border: 2px solid rgba(255,255,255,0.5);
+            animation: orbFloat 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(255,107,107,0.6);
+        }
+        
+        @keyframes orbFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        .lightning-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, transparent, #fff, transparent);
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .lightning-effect.active {
+            animation: lightning 0.5s ease-in-out;
+        }
+        
+        @keyframes lightning {
+            0%, 100% { opacity: 0; transform: translateX(-100%); }
+            50% { opacity: 0.8; transform: translateX(100%); }
+        }
+        
+        .auto-spin-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .auto-spin-indicator.active {
+            display: block;
         }
     </style>
 </head>
@@ -470,7 +570,7 @@
     </div>
     
     <div id="slots-games" class="games-container">
-        <!-- Enhanced Slot Game -->
+        <!-- Enhanced Slot Game with Auto Spin -->
         <div class="game-card">
             <div class="game-title">🎰 MEGA SLOT MACHINE</div>
             <div class="game-area">
@@ -480,11 +580,52 @@
                     <div class="reel" id="reel3">🍒</div>
                 </div>
                 <div class="bet-controls">
-                    <label>Bet Amount:</label>
+                    <label>Bet:</label>
                     <input type="number" class="bet-amount" id="slotBet" value="10" min="1" max="100">
-                    <button class="btn" onclick="spinSlot()">🎰 SPIN</button>
+                    <button class="btn" id="spinBtn" onclick="spinSlot()">🎰 SPIN</button>
+                    <button class="btn" id="autoSpinBtn" onclick="toggleAutoSpin()">⚡ AUTO</button>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Auto Spins: </label>
+                    <select id="autoSpinCount" style="padding: 5px; border-radius: 5px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span id="autoSpinRemaining" style="margin-left: 10px; color: #ffd700;"></span>
                 </div>
                 <div class="result-message" id="slotResult"></div>
+            </div>
+        </div>
+
+        <!-- Gates of Olympus Style -->
+        <div class="game-card">
+            <div class="game-title">⚡ GATES OF OLYMPUS</div>
+            <div class="game-area">
+                <div style="position: relative; background: linear-gradient(135deg, #1a237e, #3949ab); border-radius: 15px; padding: 20px; border: 2px solid #ffd700;">
+                    <div class="olympus-grid" id="olympusGrid">
+                        <!-- 6x5 grid will be generated by JS -->
+                    </div>
+                    <div class="multiplier-orbs" id="multiplierOrbs" style="position: absolute; top: 10px; right: 10px; display: flex; gap: 5px;"></div>
+                </div>
+                <div class="bet-controls">
+                    <label>Bet:</label>
+                    <input type="number" class="bet-amount" id="olympusBet" value="20" min="5" max="200">
+                    <button class="btn" id="olympusSpinBtn" onclick="spinOlympus()">⚡ SPIN</button>
+                    <button class="btn" id="olympusAutoBtn" onclick="toggleOlympusAuto()">🔄 AUTO</button>
+                </div>
+                <div style="margin: 10px 0;">
+                    <label>Auto Spins: </label>
+                    <select id="olympusAutoCount" style="padding: 5px; border-radius: 5px; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3);">
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span id="olympusAutoRemaining" style="margin-left: 10px; color: #ffd700;"></span>
+                </div>
+                <div class="result-message" id="olympusResult"></div>
             </div>
         </div>
         
@@ -621,8 +762,20 @@
         let totalWins = 0;
         let totalGames = 0;
         
+        // Auto spin variables
+        let autoSpinActive = false;
+        let autoSpinRemaining = 0;
+        let autoSpinInterval;
+        
+        // Olympus variables
+        let olympusAutoActive = false;
+        let olympusAutoRemaining = 0;
+        let olympusAutoInterval;
+        let olympusSpinning = false;
+        
         // Game stats and symbols
         const slotSymbols = ['🍎', '🍌', '🍒', '🍇', '🍊', '⭐', '💎', '🔔', '🍋'];
+        const olympusSymbols = ['⚡', '🏺', '💎', '👑', '🗲', '🔱', '💰', '⭐', '💍'];
         const cardValues = [1,2,3,4,5,6,7,8,9,10,11,11,11,11]; // Blackjack values (J,Q,K = 11, A = 1 or 11)
         let dealerHand = [];
         let playerHand = [];
@@ -654,17 +807,23 @@
             event.target.classList.add('active');
         }
         
-        // Enhanced Slot Machine
+        // Enhanced Slot Machine with Auto Spin
         function spinSlot() {
             const bet = parseInt(document.getElementById('slotBet').value);
             if (bet > balance) {
                 document.getElementById('slotResult').innerHTML = '<span style="color: #ff4444;">Insufficient balance!</span>';
+                if (autoSpinActive) {
+                    stopAutoSpin();
+                }
                 return;
             }
             
             balance -= bet;
             totalGames++;
             updateBalance();
+            
+            // Disable spin button during animation
+            document.getElementById('spinBtn').disabled = true;
             
             const reels = ['reel1', 'reel2', 'reel3'];
             const results = [];
@@ -689,11 +848,258 @@
                         completed++;
                         
                         if (completed === 3) {
-                            setTimeout(() => checkSlotResult(results, bet), 300);
+                            setTimeout(() => {
+                                checkSlotResult(results, bet);
+                                document.getElementById('spinBtn').disabled = false;
+                            }, 300);
                         }
                     }
                 }, 100);
             });
+        }
+        
+        function toggleAutoSpin() {
+            if (autoSpinActive) {
+                stopAutoSpin();
+            } else {
+                startAutoSpin();
+            }
+        }
+        
+        function startAutoSpin() {
+            const count = parseInt(document.getElementById('autoSpinCount').value);
+            autoSpinActive = true;
+            autoSpinRemaining = count;
+            
+            document.getElementById('autoSpinBtn').textContent = '⏹️ STOP';
+            document.getElementById('spinBtn').disabled = true;
+            updateAutoSpinDisplay();
+            
+            autoSpinInterval = setInterval(() => {
+                if (autoSpinRemaining > 0) {
+                    spinSlot();
+                    autoSpinRemaining--;
+                    updateAutoSpinDisplay();
+                } else {
+                    stopAutoSpin();
+                }
+            }, 2500); // 2.5 seconds between spins
+        }
+        
+        function stopAutoSpin() {
+            autoSpinActive = false;
+            autoSpinRemaining = 0;
+            clearInterval(autoSpinInterval);
+            
+            document.getElementById('autoSpinBtn').textContent = '⚡ AUTO';
+            document.getElementById('spinBtn').disabled = false;
+            document.getElementById('autoSpinRemaining').textContent = '';
+        }
+        
+        function updateAutoSpinDisplay() {
+            if (autoSpinActive) {
+                document.getElementById('autoSpinRemaining').textContent = `Remaining: ${autoSpinRemaining}`;
+            }
+        }
+        
+        // Gates of Olympus Game
+        function initializeOlympus() {
+            const grid = document.getElementById('olympusGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 0; i < 30; i++) { // 6x5 grid
+                const symbol = document.createElement('div');
+                symbol.className = 'olympus-symbol';
+                symbol.textContent = olympusSymbols[Math.floor(Math.random() * olympusSymbols.length)];
+                symbol.dataset.index = i;
+                grid.appendChild(symbol);
+            }
+        }
+        
+        function spinOlympus() {
+            if (olympusSpinning) return;
+            
+            const bet = parseInt(document.getElementById('olympusBet').value);
+            if (bet > balance) {
+                document.getElementById('olympusResult').innerHTML = '<span style="color: #ff4444;">Insufficient balance!</span>';
+                if (olympusAutoActive) {
+                    stopOlympusAuto();
+                }
+                return;
+            }
+            
+            balance -= bet;
+            totalGames++;
+            updateBalance();
+            olympusSpinning = true;
+            
+            document.getElementById('olympusSpinBtn').disabled = true;
+            
+            // Generate multiplier orbs randomly
+            generateMultiplierOrbs();
+            
+            // Animate symbols tumbling
+            const symbols = document.querySelectorAll('.olympus-symbol');
+            symbols.forEach((symbol, index) => {
+                setTimeout(() => {
+                    symbol.classList.add('tumbling');
+                    setTimeout(() => {
+                        symbol.textContent = olympusSymbols[Math.floor(Math.random() * olympusSymbols.length)];
+                        symbol.classList.remove('tumbling');
+                        
+                        if (index === symbols.length - 1) {
+                            // All symbols done tumbling
+                            setTimeout(() => {
+                                checkOlympusWin(bet);
+                            }, 500);
+                        }
+                    }, 400);
+                }, index * 50);
+            });
+        }
+        
+        function generateMultiplierOrbs() {
+            const orbsContainer = document.getElementById('multiplierOrbs');
+            orbsContainer.innerHTML = '';
+            
+            // Random chance for multiplier orbs
+            const orbCount = Math.random() < 0.3 ? Math.floor(Math.random() * 4) + 1 : 0;
+            
+            for (let i = 0; i < orbCount; i++) {
+                const orb = document.createElement('div');
+                orb.className = 'multiplier-orb';
+                const multipliers = ['2x', '3x', '5x', '10x', '25x', '100x'];
+                orb.textContent = multipliers[Math.floor(Math.random() * multipliers.length)];
+                orbsContainer.appendChild(orb);
+            }
+        }
+        
+        function checkOlympusWin(bet) {
+            const symbols = document.querySelectorAll('.olympus-symbol');
+            const symbolCounts = {};
+            const winningSymbols = new Set();
+            
+            // Count symbols
+            symbols.forEach(symbol => {
+                const text = symbol.textContent;
+                symbolCounts[text] = (symbolCounts[text] || 0) + 1;
+            });
+            
+            let totalWinAmount = 0;
+            let hasWin = false;
+            
+            // Check for wins (8 or more matching symbols for Gates of Olympus style)
+            Object.entries(symbolCounts).forEach(([symbol, count]) => {
+                if (count >= 8) {
+                    hasWin = true;
+                    let multiplier = 1;
+                    
+                    // Different symbols have different payouts
+                    switch(symbol) {
+                        case '⚡': multiplier = 50; break;
+                        case '👑': multiplier = 25; break;
+                        case '💎': multiplier = 15; break;
+                        case '🏺': multiplier = 10; break;
+                        case '🗲': multiplier = 8; break;
+                        case '🔱': multiplier = 6; break;
+                        default: multiplier = 3;
+                    }
+                    
+                    const winAmount = Math.floor(bet * multiplier * (count / 8));
+                    totalWinAmount += winAmount;
+                    
+                    // Mark winning symbols
+                    symbols.forEach(symbolEl => {
+                        if (symbolEl.textContent === symbol) {
+                            symbolEl.classList.add('winning');
+                            winningSymbols.add(symbolEl);
+                        }
+                    });
+                }
+            });
+            
+            // Apply multiplier orbs
+            const orbs = document.querySelectorAll('.multiplier-orb');
+            if (hasWin && orbs.length > 0) {
+                let totalMultiplier = 1;
+                orbs.forEach(orb => {
+                    const multiplier = parseInt(orb.textContent.replace('x', ''));
+                    totalMultiplier *= multiplier;
+                });
+                totalWinAmount *= totalMultiplier;
+                
+                // Lightning effect
+                const lightningEffect = document.createElement('div');
+                lightningEffect.className = 'lightning-effect active';
+                document.querySelector('.olympus-grid').appendChild(lightningEffect);
+                setTimeout(() => lightningEffect.remove(), 500);
+            }
+            
+            // Display result
+            const resultDiv = document.getElementById('olympusResult');
+            if (hasWin) {
+                balance += totalWinAmount;
+                totalWins++;
+                resultDiv.innerHTML = `<span class="win">⚡ OLYMPUS WIN! ${totalWinAmount} coins! ⚡</span>`;
+            } else {
+                resultDiv.innerHTML = `<span class="lose">No winning combination. Try again!</span>`;
+            }
+            
+            updateBalance();
+            updateStats();
+            olympusSpinning = false;
+            document.getElementById('olympusSpinBtn').disabled = false;
+            
+            // Clear winning animations after delay
+            setTimeout(() => {
+                winningSymbols.forEach(symbol => {
+                    symbol.classList.remove('winning');
+                });
+            }, 2000);
+        }
+        
+        function toggleOlympusAuto() {
+            if (olympusAutoActive) {
+                stopOlympusAuto();
+            } else {
+                startOlympusAuto();
+            }
+        }
+        
+        function startOlympusAuto() {
+            const count = parseInt(document.getElementById('olympusAutoCount').value);
+            olympusAutoActive = true;
+            olympusAutoRemaining = count;
+            
+            document.getElementById('olympusAutoBtn').textContent = '⏹️ STOP';
+            document.getElementById('olympusSpinBtn').disabled = true;
+            updateOlympusAutoDisplay();
+            
+            olympusAutoInterval = setInterval(() => {
+                if (olympusAutoRemaining > 0 && !olympusSpinning) {
+                    spinOlympus();
+                    olympusAutoRemaining--;
+                    updateOlympusAutoDisplay();
+                } else if (olympusAutoRemaining <= 0) {
+                    stopOlympusAuto();
+                }
+            }, 3500); // 3.5 seconds between spins
+        }
+        
+        function stopOlympusAuto() {
+            olympusAutoActive = false;
+            olympusAutoRemaining = 0;
+            clearInterval(olympusAutoInterval);
+            
+            document.getElementById('olympusAutoBtn').textContent = '🔄 AUTO';
+            document.getElementById('olympusSpinBtn').disabled = false;
+            document.getElementById('olympusAutoRemaining').textContent = '';
+        }
+        
+        function updateOlympusAutoDisplay() {
+            if (olympusAutoActive) {
+                document.getElementById('olympusAutoRemaining').textContent = `Remaining: ${olympusAutoRemaining}`;
+            }
         }
         
         function checkSlotResult(results, bet) {
@@ -1177,7 +1583,18 @@
         
         // Initialize
         updateStats();
+        
+        // Initialize Olympus grid when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeOlympus();
+        });
+        
+        // Initialize immediately if DOM is already loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeOlympus);
+        } else {
+            initializeOlympus();
+        }
     </script>
 </body>
-
 </html>
